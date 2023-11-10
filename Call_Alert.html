@@ -1,0 +1,144 @@
+Sure! Here's the code modified to use an audio file hosted on GitHub:
+
+```html
+<html>
+<head>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <style type="text/css">
+        body {
+          animation: blink 2s infinite;
+        }
+        @keyframes blink {
+          0%, 49.9% {
+            background-color: red;
+            color: white;
+          }
+          50%, 100% {
+            background-color: white;
+            color: black;
+          }
+        }
+        #notification-container {
+          display: none;
+          font-family: Arial, sans-serif;
+          font-size: 2.18em;
+          text-align: center;
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: fit-content;
+          padding: 16px;
+          border-radius: 10px;
+          z-index: 9999;
+          color: white;
+        }
+        #notification-container.black {
+          color: black;
+        }
+        #notification-container span {
+          display: block;
+          margin-top: 6px;
+          line-height: 1em;
+        }
+        #notification-container span:first-child {
+          margin-bottom: 12px;
+        }
+    </style>
+    <script type="text/javascript">
+        var metadata;
+        var audioElement;
+
+        $(document).ready(function () {
+          audioElement = document.createElement('audio');
+          audioElement.setAttribute('src', 'https://raw.githubusercontent.com/kurtfive9/five9/main/mp3-output-ttsfree(dot)com (1).mp3');
+          getMetaDataAndCalls();
+        });
+
+        function getMetaDataAndCalls() {
+          $.when(getMetaData()).then(function (metadata) {
+            $.when(getCalls(metadata)).then(function (calls) {
+              if (calls && calls.length == 1) {
+                var totalDuration = calls[0]["talkTime"] + calls[0]["holdTime"] + calls[0]["parkTime"];
+                if (totalDuration >= 0) {
+                  NotifyMe(calls[0]["ani"], calls[0]["dnis"]);
+                }
+              }
+            });
+          });
+        }
+
+        function getMetaData() {
+          var deferred = new $.Deferred();
+          $.ajax({
+            url: 'https://app.five9.com/appsvcs/rs/svc/auth/metadata',
+            dataType: 'json',
+            xhrFields: {
+              withCredentials: true
+            },
+            complete: function (jqXHR, status) {
+              try {
+                var response = JSON.parse(jqXHR.responseText);
+                if (status === 'success') {
+                  metadata = response;
+                  deferred.resolve(response);
+                } else {
+                  deferred.reject(response.five9ExceptionDetail);
+                }
+              } catch (e) {}
+            }
+          });
+          return deferred.promise();
+        }
+
+        function getCalls(metadata) {
+          var deferred = new $.Deferred();
+          $.ajax({
+            url: 'https://' + metadata.metadata.dataCenters[0].apiUrls[0].host + '/appsvcs/rs/svc/agents/' + metadata.userId + '/interactions/calls',
+            dataType: 'json',
+            xhrFields: {
+              withCredentials: true
+            },
+            complete: function (jqXHR, status) {
+              try {
+                var response = JSON.parse(jqXHR.responseText);
+                if (status === 'success') {
+                  deferred.resolve(response);
+                } else {
+                  deferred.reject(response.five9ExceptionDetail);
+                }
+              } catch (e) {}
+            }
+          });
+          return deferred.promise();
+        }
+
+        function NotifyMe(ani, dnis) {
+          var popUp = $('<div id="notification-container"><span>You have an incoming call from:</span><br><span>ANI: '+ani+'</span><span>DNIS: '+dnis+'</span></div>')
+                          .appendTo($('body'))
+                          .css({top: '50%', left: '50%', transform: 'translate(-50%, -50%)', 'font-size': '2.18em', 'padding': '16px'})
+                          .fadeIn(function() {
+                            audioElement.play();
+                          })
+                          .delay(10000) // Stay on screen for 10 seconds
+                          .fadeOut(function () {
+                            $(this).remove();
+                          });
+
+          setTimeout(function() {
+            $('body').css('animation', 'none');
+            popUp.remove();
+          }, 10000);
+
+          setTimeout(function() {
+            popUp.addClass('black');
+          }, 500);
+        }
+    </script>
+</head>
+<body>
+</body>
+</html>
+```
+
+In this version of the code, you will need to replace `YourUserName`, `YourRepositoryName`, and `YourAudioFileName` with your own GitHub username, repository name, and audio file name respectively. Make sure that the audio file is hosted on a GitHub repository and is publicly accessible.
